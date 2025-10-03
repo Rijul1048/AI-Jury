@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% block title %}AI Jury — Chat{% endblock %}
+{% block content %}
+
+<div class="h-[calc(100vh-8rem)] -mx-4 sm:-mx-6 lg:-mx-8">
+    <div class="grid grid-cols-12 gap-0 h-full">
+        <!-- Sidebar -->
+        <aside class="col-span-12 md:col-span-3 xl:col-span-2 border-r border-zinc-200 bg-white/80 backdrop-blur-sm h-full">
+            <div class="flex h-full flex-col">
+                <!-- Sidebar header -->
+                <div class="px-4 py-4 border-b border-zinc-200">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-semibold text-zinc-800">Chats</h2>
+                        <button class="inline-flex items-center rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-indigo-500/40 hover:bg-indigo-700 transition" onclick="createNewChat()">New</button>
+                    </div>
+                    <div class="mt-3">
+                        <div class="relative">
+                            <input type="text" id="search-chats" placeholder="Search chats" class="w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                            <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-zinc-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat list -->
+                <div id="chat-list" class="flex-1 overflow-y-auto divide-y divide-zinc-100">
+                    <!-- Chat items will be loaded here -->
+                </div>
+
+                <!-- Sidebar footer -->
+                <div class="px-4 py-4 border-t border-zinc-200">
+                    <a href="#" class="inline-flex items-center gap-2 text-xs text-zinc-600 hover:text-zinc-800">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded bg-indigo-600 text-white ring-1 ring-indigo-500/40">AI</span>
+                        AI Jury Chat
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main chat area -->
+        <section class="col-span-12 md:col-span-9 xl:col-span-10 h-full">
+            <div class="flex h-full flex-col">
+                <!-- Conversation header -->
+                <div class="sticky top-0 z-10 border-b border-zinc-200 bg-white/70 backdrop-blur px-4 py-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="inline-flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600 text-white ring-1 ring-indigo-500/40">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v3m0 12v3m0-15a9 9 0 0 1 9 9m-9-9a9 9 0 0 0-9 9"/></svg>
+                            </div>
+                            <h3 id="chat-title" class="text-sm font-semibold text-zinc-800">New chat</h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="clearChat()" class="rounded-md px-2.5 py-1.5 text-xs font-medium text-zinc-600 ring-1 ring-inset ring-zinc-200 hover:bg-zinc-50">Clear</button>
+                            <button onclick="exportChat()" class="rounded-md px-2.5 py-1.5 text-xs font-medium text-zinc-600 ring-1 ring-inset ring-zinc-200 hover:bg-zinc-50">Export</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div id="messages" class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+                    <!-- Messages will render here -->
+                </div>
+
+                <!-- Composer -->
+                <div class="border-t border-zinc-200 bg-white/80 px-4 sm:px-6 lg:px-8 py-4">
+                    <form class="mx-auto max-w-3xl" onsubmit="sendMessage(event)">
+                        <div class="flex items-end gap-3">
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <textarea id="chat-input" rows="1" placeholder="Message AI Jury about your legal case..." class="w-full resize-none rounded-xl border border-zinc-200 bg-white px-4 py-3 pr-12 text-sm text-zinc-800 placeholder-zinc-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-200" oninput="autoResize(this)"></textarea>
+                                    <div class="absolute bottom-3 right-3 flex items-center gap-2">
+                                        <button type="button" title="Attach file" class="rounded-md px-2.5 py-1.5 text-xs font-medium text-zinc-600 ring-1 ring-inset ring-zinc-200 hover:bg-zinc-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12v5a5 5 0 0 1-10 0V7a3 3 0 1 1 6 0v9a1 1 0 0 1-2 0V8"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" id="send-button" class="inline-flex items-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-inset ring-indigo-500/40 hover:bg-indigo-700 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="mr-2 h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+let currentSessionId = null;
+
+// Utility functions
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+
+function formatTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+}
+
+// Chat session management
+async function createNewChat() {
+    try {
+        const response = await fetch('/api/chat/sessions/create/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        const data = await response.json();
+        currentSessionId = data.session_id;
+        document.getElementById('chat-title').textContent = data.title;
+        document.getElementById('messages').innerHTML = '';
+        loadChatSessions();
+        addWelcomeMessage();
+    } catch (error) {
+        console.error('Error creating new chat:', error);
+    }
+}
+
+async function loadChatSessions() {
+    try {
+        const response = await fetch('/api/chat/sessions/');
+        const data = await response.json();
+        const chatList = document.getElementById('chat-list');
+        
+        chatList.innerHTML = '';
+        data.sessions.forEach(session => {
+            const button = document.createElement('button');
+            button.className = 'w-full text-left px-4 py-3 hover:bg-zinc-50 focus:bg-zinc-50 transition';
+            button.innerHTML = `
+                <p class="text-sm font-medium text-zinc-800 truncate">${session.title}</p>
+                <p class="text-xs text-zinc-500 truncate">${formatTimeAgo(session.last_activity)} • ${session.message_count} messages</p>
+            `;
+            button.onclick = () => loadChatSession(session.id);
+            chatList.appendChild(button);
+        });
+    } catch (error) {
+        console.error('Error loading chat sessions:', error);
+    }
+}
+
+async function loadChatSession(sessionId) {
+    try {
+        const response = await fetch(`/api/chat/sessions/${sessionId}/messages/`);
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Error loading messages:', data.error);
+            return;
+        }
+        
+        currentSessionId = sessionId;
+        const messagesContainer = document.getElementById('messages');
+        messagesContainer.innerHTML = '';
+        
+        data.messages.forEach(message => {
+            addMessageToChat(message.content, message.is_user, message.timestamp, message.thinking_time);
+        });
+        
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        loadChatSessions(); // Refresh session list to update timestamps
+    } catch (error) {
+        console.error('Error loading chat session:', error);
+    }
+}
+
+function addWelcomeMessage() {
+    const messagesContainer = document.getElementById('messages');
+    const welcomeMsg = document.createElement('div');
+    welcomeMsg.className = 'flex items-start gap-3';
+    welcomeMsg.innerHTML = `
+        <div class="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600 text-white ring-1 ring-indigo-500/40">AI</div>
+        <div class="flex-1">
+            <div class="prose prose-zinc max-w-none">
+                <p class="text-sm text-zinc-800">Hello! I'm your AI Jury assistant. I can help you analyze legal cases, find relevant precedents from Supreme Court verdicts, and provide judicial insights. How can I assist you today?</p>
+            </div>
+            <div class="mt-2 text-[11px] text-zinc-500">AI Jury • Ready to assist</div>
+        </div>
+    `;
+    messagesContainer.appendChild(welcomeMsg);
+}
+
+// Message handling
+async function sendMessage(e) {
+    e.preventDefault();
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Disable input while sending
+    input.disabled = true;
+    document.getElementById('send-button').disabled = true;
+    
+    // Add user message to chat immediately
+    addMessageToChat(message, true);
+    input.value = '';
+    autoResize(input);
+    
+    try {
+        const response = await fetch('/api/chat/send/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message,
+                session_id: currentSessionId
+            }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        currentSessionId = data.session_id;
+        
+        // Add AI response to chat
+        addMessageToChat(
+            data.ai_message.content, 
+            false, 
+            data.ai_message.timestamp, 
+            data.ai_message.thinking_time
+        );
+        
+        // Update chat title if this is a new session
+        if (data.session_id === currentSessionId) {
+            loadChatSessions();
+        }
+        
+    } catch (error) {
+        console.error('Error sending message:', error);
+        addMessageToChat(
+            "Sorry, I encountered an error while processing your request. Please try again.", 
+            false
+        );
+    } finally {
+        // Re-enable input
+        input.disabled = false;
+        document.getElementById('send-button').disabled = false;
+        input.focus();
+    }
+}
+
+function addMessageToChat(content, isUser, timestamp = null, thinkingTime = null) {
+    const messages = document.getElementById('messages');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex items-start gap-3';
+    
+    const now = new Date();
+    const timeString = timestamp || now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    if (isUser) {
+        wrapper.innerHTML = `
+            <div class="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md bg-zinc-200 text-zinc-700 ring-1 ring-zinc-300">U</div>
+            <div class="flex-1">
+                <div class="rounded-xl ring-1 ring-zinc-200 bg-white px-4 py-3 shadow-sm">
+                    <p class="text-sm text-zinc-800">${content}</p>
+                </div>
+                <div class="mt-2 text-[11px] text-zinc-500">you • ${timeString}</div>
+            </div>
+        `;
+    } else {
+        const thinkingTimeHtml = thinkingTime ? `
+            <span class="inline-flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-3.5 w-3.5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l4 2"/></svg>
+                thinking time: ${thinkingTime}s
+            </span>
+        ` : '';
+        
+        wrapper.innerHTML = `
+            <div class="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600 text-white ring-1 ring-indigo-500/40">AI</div>
+            <div class="flex-1">
+                <div class="rounded-xl ring-1 ring-zinc-200 bg-white px-4 py-4 shadow-sm">
+                    <div class="prose prose-zinc max-w-none text-sm text-zinc-800">
+                        ${content}
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center gap-3 text-[11px] text-zinc-500">
+                    <span>AI Jury • ${timeString}</span>
+                    ${thinkingTimeHtml}
+                </div>
+            </div>
+        `;
+    }
+    
+    messages.appendChild(wrapper);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// Utility function to get CSRF token
+function getCSRFToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Additional functions
+function clearChat() {
+    if (confirm('Are you sure you want to clear this chat?')) {
+        document.getElementById('messages').innerHTML = '';
+        addWelcomeMessage();
+    }
+}
+
+function exportChat() {
+    // Implement chat export functionality
+    alert('Export feature coming soon!');
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadChatSessions();
+    addWelcomeMessage();
+});
+</script>
+
+{% endblock %}
